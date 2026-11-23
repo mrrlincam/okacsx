@@ -1,0 +1,309 @@
+const express = require("express");
+const axios = require("axios");
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+
+app.get("/", (req, res) => {
+res.send(`
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZHEA GIO TIKTOK DOWNLOADER</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #070b12;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    width: 90%;
+    max-width: 480px;
+    margin: 70px auto;
+    text-align: center;
+}
+
+h1 {
+    color: #00ff9c;
+    font-size: 32px;
+    text-shadow: 0 0 15px #00ff9c;
+}
+
+.subtitle {
+    color: #888;
+    letter-spacing: 3px;
+    font-size: 12px;
+}
+
+.status {
+    color: #00ff9c;
+    margin: 20px;
+    font-size: 12px;
+}
+
+.card {
+    background: #111925;
+    padding: 25px;
+    border: 1px solid #00ff9c;
+    border-radius: 15px;
+    margin-top: 30px;
+}
+
+input {
+    width: 100%;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    background: #080d15;
+    color: white;
+    outline: none;
+}
+
+button {
+    width: 100%;
+    padding: 15px;
+    margin-top: 15px;
+    background: #00ff9c;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:disabled {
+    opacity: 0.5;
+}
+
+#message {
+    margin-top: 15px;
+    color: #00ff9c;
+}
+
+#result {
+    margin-top: 20px;
+}
+
+#cover {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.result-link {
+    display: block;
+    background: #00ff9c;
+    color: #07110c;
+    padding: 14px;
+    margin-top: 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+footer {
+    color: #666;
+    margin-top: 40px;
+    font-size: 12px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>ZHEA GIO</h1>
+
+<p class="subtitle">TIKTOK VIDEO DOWNLOADER</p>
+
+<div class="status">â SYSTEM ONLINE</div>
+
+<div class="card">
+
+<h2>Download TikTok Video</h2>
+
+<input
+id="videoUrl"
+type="url"
+placeholder="Paste TikTok Link Here"
+>
+
+<button id="downloadBtn" onclick="downloadVideo()">
+DOWNLOAD VIDEO
+</button>
+
+<div id="message"></div>
+
+<div id="result" hidden>
+
+<img id="cover" alt="Video Cover">
+
+<h3 id="title"></h3>
+
+<p id="author"></p>
+
+<a id="play" class="result-link"
+target="_blank" rel="noopener">
+PLAY VIDEO
+</a>
+
+<a id="save" class="result-link"
+target="_blank" rel="noopener">
+DOWNLOAD VIDEO
+</a>
+
+<a id="music" class="result-link"
+target="_blank" rel="noopener">
+DOWNLOAD MUSIC
+</a>
+
+</div>
+
+</div>
+
+<footer>
+POWERED BY ZHEA GIO Â© 2026
+</footer>
+
+</div>
+
+<script>
+async function downloadVideo() {
+
+    const url = document.getElementById("videoUrl").value.trim();
+
+    const button = document.getElementById("downloadBtn");
+    const message = document.getElementById("message");
+    const result = document.getElementById("result");
+
+    if (!url) {
+        message.textContent = "áá¼áááááá¼á TikTok Link!";
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = "PROCESSING...";
+    message.textContent = "áááá»áááááááááá¸ááá¢á¼...";
+    result.hidden = true;
+
+    try {
+
+        const response = await fetch("/api/download", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({url})
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || "Download Failed");
+        }
+
+        document.getElementById("cover").src = data.cover;
+        document.getElementById("title").textContent = data.title;
+        document.getElementById("author").textContent = "Author: " + data.author;
+
+        document.getElementById("play").href = data.play;
+        document.getElementById("save").href = data.play;
+
+        const music = document.getElementById("music");
+        music.href = data.music || "#";
+        music.hidden = !data.music;
+
+        result.hidden = false;
+        message.textContent = "áááá¾ááá¸ááá¢á¼á á¾á!";
+
+    } catch (error) {
+
+        message.textContent = error.message;
+
+    } finally {
+
+        button.disabled = false;
+        button.textContent = "DOWNLOAD VIDEO";
+
+    }
+}
+</script>
+
+</body>
+</html>
+`);
+});
+
+app.post("/api/download", async (req, res) => {
+
+    const { url } = req.body;
+
+    if (!url || !/^https?:\/\/(www\.|vm\.|vt\.)?tiktok\.com\//i.test(url)) {
+        return res.status(400).json({
+            success: false,
+            error: "TikTok Link áá·ááááá¹ááááá¼á!"
+        });
+    }
+
+    try {
+
+        const response = await axios.post(
+            "https://www.tikwm.com/api/",
+            {
+                url: url,
+                hd: 1
+            },
+            {
+                timeout: 30000,
+                headers: {
+                    "Content-Type": "application/json",
+                    "User-Agent": "Mozilla/5.0"
+                }
+            }
+        );
+
+        const result = response.data;
+        const d = result?.data;
+
+        if (result?.code !== 0 || !d) {
+            return res.status(400).json({
+                success: false,
+                error: "áááá·ááá¾ááá¸ááá¢á¼!"
+            });
+        }
+
+        res.json({
+            success: true,
+            title: d.title || "TikTok Video",
+            cover: d.cover || "",
+            play: d.hdplay || d.play || "",
+            music: d.music || "",
+            author: d.author?.nickname || "TikTok"
+        });
+
+    } catch (error) {
+
+        console.error(error.message);
+
+        res.status(500).json({
+            success: false,
+            error: "Server á¬ TikTok API áá¶ááááá á¶!"
+        });
+
+    }
+
+});
+
+app.listen(PORT, "0.0.0.0", () => {
+    console.log("ZHEA GIO SERVER RUNNING ON PORT " + PORT);
+});
